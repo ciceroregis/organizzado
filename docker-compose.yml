@@ -11,6 +11,7 @@ services:
       - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=organizzado_proxy_net"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
@@ -64,6 +65,7 @@ services:
       POSTGRES_PORT: 5432
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=organizzado_proxy_net"
       # Roteador HTTPS (www.organizzado.com.br e organizzado.com.br)
       - "traefik.http.routers.organizzado.rule=Host(`${DOMAIN_NAME:-organizzado.com.br}`) || Host(`www.${DOMAIN_NAME:-organizzado.com.br}`)"
       - "traefik.http.routers.organizzado.entrypoints=websecure"

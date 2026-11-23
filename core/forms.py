@@ -1,7 +1,11 @@
+import os
 from decimal import Decimal, InvalidOperation
 from django import forms
 from django.contrib.auth.models import User
 from .models import PerfilFinanceiro, Categoria, Lancamento
+
+MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+EXTENSOES_PERMITIDAS = {'.pdf', '.csv', '.ofx'}
 
 
 class MoedaBRField(forms.CharField):
@@ -22,10 +26,8 @@ class MoedaBRField(forms.CharField):
     def prepare_value(self, value):
         if value is None or value == '':
             return ''
-        if isinstance(value, str):
-            # Se já estiver formatado em pt-BR (com vírgula), mantém
-            if ',' in value:
-                return value
+        if isinstance(value, str) and ',' in value:
+            return value
         try:
             dec = Decimal(str(value)).quantize(Decimal('0.01'))
             neg = '-' if dec < 0 else ''
@@ -41,12 +43,10 @@ class MoedaBRField(forms.CharField):
         val_str = str(value).strip()
         if not val_str:
             return None
-        # Remove símbolo R$, espaços
         negativo = '-' in val_str and self.permite_negativo
         limpo = val_str.replace('R$', '').replace(' ', '').replace('-', '').strip()
         if not limpo:
             return None
-        # Se tiver vírgula (padrão BR: 8.500,00), remove pontos de milhar e troca vírgula por ponto
         if ',' in limpo:
             limpo = limpo.replace('.', '').replace(',', '.')
         try:
@@ -72,14 +72,16 @@ class RegistroUsuarioForm(forms.ModelForm):
     recebe_duas_datas = forms.BooleanField(
         required=False, initial=True,
         label='Recebo meu salário dividido em 2 datas no mês (ex: Dia 05 e Dia 20)',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        widget=forms.CheckboxInput(attrs={'id': 'id_recebe_duas_datas', 'class': 'form-check-input'})
     )
     salario_bruto_mensal = MoedaBRField(
-        initial=Decimal('6500.00'),
+        required=False,
+        initial=Decimal('0.00'),
         label='Salário Mensal Total (R$)'
     )
     percentual_adiantamento = forms.DecimalField(
-        max_digits=5, decimal_places=2, initial=40.00,
+        required=False,
+        max_digits=5, decimal_places=2, initial=Decimal('40.00'),
         label='% do 2º Recebimento (Meio do Mês)',
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '1'})
     )
@@ -145,11 +147,11 @@ class PerfilSalarialForm(forms.ModelForm):
             'dia_fechamento_fixo',
         ]
         widgets = {
-            'recebe_duas_datas': forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'}),
-            'percentual_adiantamento': forms.NumberInput(attrs={'class': 'form-control', 'step': '1', 'min': '0', 'max': '100'}),
-            'dia_adiantamento': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '31'}),
-            'usa_quinto_dia_util': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'dia_fechamento_fixo': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '31'}),
+            'recebe_duas_datas': forms.CheckboxInput(attrs={'id': 'id_recebe_duas_datas', 'class': 'form-check-input', 'role': 'switch'}),
+            'percentual_adiantamento': forms.NumberInput(attrs={'id': 'id_percentual_adiantamento', 'class': 'form-control', 'step': '1', 'min': '0', 'max': '100'}),
+            'dia_adiantamento': forms.NumberInput(attrs={'id': 'id_dia_adiantamento', 'class': 'form-control', 'min': '1', 'max': '31'}),
+            'usa_quinto_dia_util': forms.CheckboxInput(attrs={'id': 'id_usa_quinto_dia_util', 'class': 'form-check-input'}),
+            'dia_fechamento_fixo': forms.NumberInput(attrs={'id': 'id_dia_fechamento_fixo', 'class': 'form-control', 'min': '1', 'max': '31'}),
         }
 
     def clean_saldo_inicial(self):
@@ -196,7 +198,11 @@ class LancamentoForm(forms.ModelForm):
 
     class Meta:
         model = Lancamento
-        fields = ['data', 'descricao', 'categoria', 'valor', 'forma_pagamento', 'ciclo', 'status', 'fixo_recorrente', 'observacao']
+        fields = [
+            'data', 'descricao', 'categoria', 'valor',
+            'forma_pagamento', 'ciclo', 'status',
+            'fixo_recorrente', 'observacao'
+        ]
         widgets = {
             'data': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'descricao': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Aluguel, Supermercado, Luz...'}),
@@ -210,23 +216,68 @@ class LancamentoForm(forms.ModelForm):
 
 
 class ImportarExtratoForm(forms.Form):
-    BANCO_INTER = 'INTER_PDF'
-    BANCO_NUBANK = 'NUBANK_CSV'
-    BANCO_ITAU = 'ITAU_CSV'
+    BANCO_AUTO = 'AUTO'
+    BANCO_INTER = 'INTER'
+    BANCO_NUBANK = 'NUBANK'
+    BANCO_ITAU = 'ITAU'
+    BANCO_BRADESCO = 'BRADESCO'
+    BANCO_SANTANDER = 'SANTANDER'
+    BANCO_BB = 'BB'
+    BANCO_CAIXA = 'CAIXA'
+    BANCO_C6 = 'C6'
+    BANCO_SICOOB = 'SICOOB'
+    BANCO_OUTRO = 'OUTRO'
+
     BANCO_CHOICES = [
-        (BANCO_INTER, 'Banco Inter (PDF)'),
-        (BANCO_NUBANK, 'Nubank (CSV)'),
-        (BANCO_ITAU, 'Itaú (CSV)'),
+        (BANCO_AUTO, 'Detecção Automática (Qualquer Banco)'),
+        (BANCO_INTER, 'Banco Inter'),
+        (BANCO_NUBANK, 'Nubank'),
+        (BANCO_ITAU, 'Itaú Unibanco'),
+        (BANCO_BRADESCO, 'Bradesco'),
+        (BANCO_SANTANDER, 'Santander'),
+        (BANCO_BB, 'Banco do Brasil'),
+        (BANCO_CAIXA, 'Caixa Econômica Federal'),
+        (BANCO_C6, 'C6 Bank'),
+        (BANCO_SICOOB, 'Sicoob / Sicredi'),
+        (BANCO_OUTRO, 'Outro Banco / Instituição'),
     ]
 
     banco = forms.ChoiceField(
         choices=BANCO_CHOICES,
-        label='selecione o Banco do Extrato',
-        widget=forms.Select(attrs={'class': 'form-select'})
+        initial=BANCO_AUTO,
+        label='Instituição Bancária do Extrato',
+        widget=forms.Select(attrs={'id': 'id_banco', 'class': 'form-select'})
     )
-
-
     arquivo = forms.FileField(
-        label='Arquivo CSV do Extrato Bancário',
-        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
+        label='Arquivo do Extrato (.pdf, .csv ou .ofx)',
+        widget=forms.ClearableFileInput(attrs={'id': 'id_arquivo', 'class': 'form-control', 'accept': '.pdf,.csv,.ofx'})
     )
+    evitar_duplicados = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Ignorar transações já importadas anteriormente (mesma data, descrição e valor)',
+        widget=forms.CheckboxInput(attrs={'id': 'id_evitar_duplicados', 'class': 'form-check-input'})
+    )
+
+    def clean_arquivo(self):
+        arquivo = self.cleaned_data.get('arquivo')
+        if not arquivo:
+            raise forms.ValidationError('Selecione um arquivo de extrato válido.')
+
+        # 1. Validação de tamanho máximo (Proteção contra DoS)
+        if arquivo.size > MAX_UPLOAD_SIZE_BYTES:
+            raise forms.ValidationError('O arquivo excede o tamanho máximo permitido de 5 MB.')
+
+        # 2. Validação de extensão permitida
+        ext = os.path.splitext(arquivo.name)[1].lower()
+        if ext not in EXTENSOES_PERMITIDAS:
+            raise forms.ValidationError('Formato de arquivo não suportado. Envie arquivos .PDF, .CSV ou .OFX.')
+
+        # 3. Validação de assinatura binária (Magic Bytes) para PDFs
+        if ext == '.pdf':
+            cabecalho = arquivo.read(5)
+            arquivo.seek(0)
+            if cabecalho != b'%PDF-':
+                raise forms.ValidationError('O arquivo enviado não é um documento PDF válido.')
+
+        return arquivo

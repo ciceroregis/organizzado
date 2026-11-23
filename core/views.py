@@ -6,10 +6,12 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib import messages
 
+from django.views.decorators.http import require_POST
+from .meses_pt import MESES_PT
 from .models import PerfilFinanceiro, Categoria, Lancamento
-from .forms import RegistroUsuarioForm, PerfilSalarialForm, CategoriaForm, LancamentoForm
+from .forms import RegistroUsuarioForm, PerfilSalarialForm, CategoriaForm, LancamentoForm, ImportarExtratoForm
 from .services import inicializar_estrutura_padrao_usuario, gerar_lancamentos_salariais_mes
-
+from .extrato_parser import processar_importacao_extrato
 
 def _calcular_saldo_anterior(user: User, data_limite: datetime.date) -> Decimal:
     perfil, _ = PerfilFinanceiro.objects.get_or_create(usuario=user)
@@ -183,18 +185,20 @@ def registro_view(request):
             perfil = inicializar_estrutura_padrao_usuario(
                 user=user,
                 recebe_duas_datas=form.cleaned_data['recebe_duas_datas'],
-                salario=form.cleaned_data['salario_bruto_mensal']
+                salario=form.cleaned_data.get('salario_bruto_mensal') or Decimal('0.00')
             )
             perfil.cpf = form.cleaned_data.get('cpf', '')
             perfil.celular = form.cleaned_data.get('celular', '')
             perfil.percentual_adiantamento = form.cleaned_data.get('percentual_adiantamento') or Decimal('40.00')
             perfil.save()
 
-            hoje = datetime.date.today()
-            gerar_lancamentos_salariais_mes(user, hoje.year, hoje.month)
+            # Só gera lançamentos salariais iniciais se o usuário informou um salário maior que zero no cadastro
+            if perfil.salario_bruto_mensal > Decimal('0.00'):
+                hoje = datetime.date.today()
+                gerar_lancamentos_salariais_mes(user, hoje.year, hoje.month)
 
             login(request, user)
-            messages.success(request, f'Bem-vindo(a), {nome}! Sua estrutura financeira foi criada com sucesso.')
+            messages.success(request, f'Bem-vindo(a), {nome}! Sua conta foi criada com sucesso.')
             return redirect('dashboard')
     else:
         form = RegistroUsuarioForm()
@@ -258,6 +262,7 @@ def fluxo_quinzenal_view(request):
     aba_ativa = request.GET.get('aba', 'visao_geral')
 
     if request.method == 'POST':
+
         acao = request.POST.get('acao')
         if acao == 'novo_lancamento':
             form = LancamentoForm(request.POST, user=request.user)
@@ -294,6 +299,40 @@ def fluxo_quinzenal_view(request):
             gerar_lancamentos_salariais_mes(request.user, ano, mes)
             messages.success(request, 'Parcelas salariais do mês geradas automaticamente!')
             return redirect(f"{request.path}?ano={ano}&mes={mes}&aba={aba_ativa}")
+        elif acao == 'importar_extrato':
+            form_extrato = ImportarExtratoForm(request.POST, request.FILES)
+            if form_extrato.is_valid():
+                banco = form_extrato.cleaned_data['banco']
+                arquivo = form_extrato.cleaned_data['arquivo']
+                evitar_dup = form_extrato.cleaned_data['evitar_duplicados']
+                try:
+                    resultado = processar_importacao_extrato(
+                        user=request.user,
+                        banco=banco,
+                        arquivo=arquivo,
+                        evitar_duplicados=evitar_dup,
+                    )
+                    if resultado['criados'] > 0:
+                        messages.success(
+                            request,
+                            f"Extrato processado com sucesso! {resultado['criados']} transações importadas "
+                            f"({resultado['ignorados']} duplicadas ignoradas)."
+                        )
+                    else:
+                        messages.warning(
+                            request,
+                            f"Nenhuma transação nova encontrada no extrato "
+                            f"({resultado['ignorados']} duplicadas ignoradas)."
+                        )
+                    if resultado['ultima_data']:
+                        ano = resultado['ultima_data'].year
+                        mes = resultado['ultima_data'].month
+                except Exception as exc:
+                    messages.error(request, f'Falha ao processar o arquivo de extrato: {exc}')
+                return redirect(f"{request.path}?ano={ano}&mes={mes}&aba=visao_geral")
+            else:
+                erros = "; ".join([f"{c}: {', '.join(m)}" for c, m in form_extrato.errors.items()])
+                messages.error(request, f'Arquivo inválido para importação ({erros}).')
 
     matriz = _construir_matriz_fluxo_quinzenal(request.user, ano, mes)
 
@@ -312,18 +351,14 @@ def fluxo_quinzenal_view(request):
         }
     )
     form_perfil = PerfilSalarialForm(instance=request.user.perfil)
-
-    meses_lista = [
-        (1, 'Janeiro'), (2, 'Fevereiro'), (3, 'Março'), (4, 'Abril'),
-        (5, 'Maio'), (6, 'Junho'), (7, 'Julho'), (8, 'Agosto'),
-        (9, 'Setembro'), (10, 'Outubro'), (11, 'Novembro'), (12, 'Dezembro')
-    ]
+    meses_lista = [(num, nome.capitalize()) for nome, num in MESES_PT.items()]
 
     context = {
         'matriz': matriz,
         'aba_ativa': aba_ativa,
         'form_lancamento': form_lancamento,
         'form_perfil': form_perfil,
+        'form_extrato': ImportarExtratoForm(),
         'meses_lista': meses_lista,
         'anos_lista': [hoje.year - 1, hoje.year, hoje.year + 1],
     }
@@ -331,6 +366,7 @@ def fluxo_quinzenal_view(request):
 
 
 @login_required
+@require_POST
 def alternar_status_lancamento(request, pk):
     lanc = get_object_or_404(Lancamento, pk=pk, usuario=request.user)
     ordem = [Lancamento.STATUS_PAGO, Lancamento.STATUS_PENDENTE, Lancamento.STATUS_AGENDADO]
@@ -342,6 +378,7 @@ def alternar_status_lancamento(request, pk):
 
 
 @login_required
+@require_POST
 def alternar_ciclo_lancamento(request, pk):
     lanc = get_object_or_404(Lancamento, pk=pk, usuario=request.user)
     if lanc.ciclo == Lancamento.CICLO_Q1:
@@ -354,6 +391,7 @@ def alternar_ciclo_lancamento(request, pk):
 
 
 @login_required
+@require_POST
 def excluir_lancamento(request, pk):
     lanc = get_object_or_404(Lancamento, pk=pk, usuario=request.user)
     if request.method == 'POST':

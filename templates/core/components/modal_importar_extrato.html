@@ -1,0 +1,44 @@
+<!-- MODAL: IMPORTAR EXTRATO BANCÁRIO (PDF / CSV) -->
+<div class="modal fade" id="modalImportarExtrato" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="importar_extrato">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-file-earmark-arrow-up text-info me-1"></i>
+                        Importar Extrato Bancário
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="id_banco">{{ form_extrato.banco.label }}</label>
+                        {{ form_extrato.banco }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="id_arquivo">{{ form_extrato.arquivo.label }}</label>
+                        {{ form_extrato.arquivo }}
+                        <div class="form-text">
+                            Compatível com <strong>qualquer banco</strong> (Banco Inter, Nubank, Itaú, Bradesco, Santander, Banco do Brasil, Caixa, C6, Sicoob/Sicredi) nos formatos <strong>.PDF, .CSV ou .OFX</strong> (máx. 5 MB).
+                            O sistema identifica automaticamente data, valor, forma de pagamento, categoria e ciclo salarial.
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        {{ form_extrato.evitar_duplicados }}
+                        <label class="form-check-label small" for="id_evitar_duplicados">
+                            {{ form_extrato.evitar_duplicados.label }}
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-semibold">
+                        <i class="bi bi-cloud-upload me-1"></i> Processar e Preencher Tabela
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

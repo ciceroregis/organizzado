@@ -47,7 +47,7 @@ class PerfilFinanceiro(models.Model):
         help_text='Ative para separar o fluxo de caixa entre 1º Recebimento (Início do Mês) e 2º Recebimento (Meio do Mês).'
     )
     salario_bruto_mensal = models.DecimalField(
-        max_digits=12, decimal_places=2, default=Decimal('6000.00'),
+        max_digits=12, decimal_places=2, default=Decimal('0.00'),
         verbose_name='Salário Mensal Base (R$)'
     )
     percentual_adiantamento = models.DecimalField(

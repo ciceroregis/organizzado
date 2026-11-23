@@ -1,0 +1,60 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="{% url 'dashboard' %}">
+            <i class="bi bi-wallet-fill text-primary fs-4"></i>
+            <span>Organizzado</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active fw-semibold{% endif %}" href="{% url 'dashboard' %}">
+                        <i class="bi bi-speedometer2 me-1"></i> Visão Geral
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'fluxo_quinzenal' %}active fw-semibold text-warning{% endif %}" href="{% url 'fluxo_quinzenal' %}">
+                        <i class="bi bi-calendar2-range me-1"></i> Fluxo Quinzenal / Mensal
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'categorias' %}active fw-semibold{% endif %}" href="{% url 'categorias' %}">
+                        <i class="bi bi-diagram-3 me-1"></i> Categorias
+                    </a>
+                </li>
+                {% if user.is_staff or user.is_superuser %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'usuarios_admin' %}active fw-semibold text-info{% endif %}" href="{% url 'usuarios_admin' %}">
+                        <i class="bi bi-shield-lock me-1"></i> Admin Usuários
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <form method="post" action="{% url 'alternar_modo_salarial' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if perfil_usuario.recebe_duas_datas %}btn-warning text-dark fw-semibold{% else %}btn-outline-light{% endif %}" title="Clique para alternar dinamicamente entre Salário em 2 Datas e Salário Único">
+                        {% if perfil_usuario.recebe_duas_datas %}
+                            <i class="bi bi-layout-split me-1"></i> Modo: 2 Datas ({{ perfil_usuario.label_curto_fechamento }} + {{ perfil_usuario.label_curto_adiantamento }})
+                        {% else %}
+                            <i class="bi bi-calendar-event me-1"></i> Modo: Salário Único Mensal ({{ perfil_usuario.label_curto_fechamento }})
+                        {% endif %}
+                    </button>
+                </form>
+
+                <div class="text-light small d-none d-xl-block">
+                    <i class="bi bi-person-circle text-success me-1"></i>
+                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                </div>
+
+                <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger" title="Sair">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>

@@ -4,16 +4,20 @@ from django.contrib.auth.models import User
 from .models import PerfilFinanceiro, Categoria, Lancamento
 
 
-def inicializar_estrutura_padrao_usuario(user: User, recebe_duas_datas: bool = True, salario: Decimal = Decimal('6500.00')):
+def inicializar_estrutura_padrao_usuario(
+    user: User,
+    recebe_duas_datas: bool = True,
+    salario: Decimal = Decimal('0.00')
+):
     """
     Cria o PerfilFinanceiro e a Árvore de Categorias do usuário.
-    Sem necessidade de Contas Bancárias.
+    Inicia zerado (sem valores salariais ou lançamentos pré-preenchidos).
     """
     perfil, _ = PerfilFinanceiro.objects.get_or_create(
         usuario=user,
         defaults={
             'recebe_duas_datas': recebe_duas_datas,
-            'salario_bruto_mensal': salario,
+            'salario_bruto_mensal': salario if salario is not None else Decimal('0.00'),
             'saldo_inicial': Decimal('0.00'),
             'percentual_adiantamento': Decimal('40.00'),
             'dia_adiantamento': 20,

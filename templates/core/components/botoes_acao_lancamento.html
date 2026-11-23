@@ -1,0 +1,45 @@
+{% load moeda %}
+<div class="action-btn-group">
+    <button type="button"
+            class="btn btn-sm btn-outline-primary btn-action-icon btn-editar-lancamento"
+            title="Editar manualmente este lançamento / salário"
+            data-bs-toggle="modal"
+            data-bs-target="#modalEditarLancamento"
+            data-id="{{ lancamento.pk }}"
+            data-data="{{ lancamento.data|date:'Y-m-d' }}"
+            data-descricao="{{ lancamento.descricao }}"
+            data-categoria="{{ lancamento.categoria.pk }}"
+            data-valor="{{ lancamento.valor|moeda }}"
+            data-forma="{{ lancamento.forma_pagamento }}"
+            data-ciclo="{{ lancamento.ciclo }}"
+            data-status="{{ lancamento.status }}"
+            data-fixo="{{ lancamento.fixo_recorrente|yesno:'true,false' }}"
+            data-observacao="{{ lancamento.observacao }}">
+        <i class="bi bi-pencil-square"></i>{% if mostrar_texto %}<span>Editar</span>{% endif %}
+    </button>
+
+    {% if perfil_usuario.recebe_duas_datas %}
+    <form method="post" action="{% url 'alternar_ciclo_lancamento' lancamento.pk %}" class="d-inline m-0">
+        {% csrf_token %}
+        <button type="submit"
+                class="btn btn-sm btn-outline-warning text-dark border-warning btn-action-icon"
+                title="Trocar quinzena deste lançamento ({% if lancamento.is_ciclo_adiantamento %}Mover para 1º Ciclo{% else %}Mover para 2º Ciclo{% endif %})">
+            <i class="bi bi-arrow-left-right"></i>{% if mostrar_texto %}<span>{% if lancamento.is_ciclo_adiantamento %}1º Ciclo{% else %}2º Ciclo{% endif %}</span>{% endif %}
+        </button>
+    </form>
+    {% endif %}
+
+    {% if mostrar_excluir %}
+    <button type="button"
+            class="btn btn-sm btn-outline-danger btn-action-icon btn-excluir-modal"
+            title="Excluir lançamento"
+            data-bs-toggle="modal"
+            data-bs-target="#modalConfirmarExclusao"
+            data-action-url="{% url 'excluir_lancamento' lancamento.pk %}"
+            data-descricao="{{ lancamento.descricao }}"
+            data-valor="{{ lancamento.valor|moeda }}"
+            data-data="{{ lancamento.data|date:'d/m/Y' }}">
+        <i class="bi bi-trash3"></i>
+    </button>
+    {% endif %}
+</div>

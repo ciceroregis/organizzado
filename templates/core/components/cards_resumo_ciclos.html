@@ -1,0 +1,163 @@
+{% load moeda %}
+{% if perfil_usuario.recebe_duas_datas %}
+<div class="row g-3 mb-4">
+    <!-- Card 1: 1º Ciclo / Fechamento (Início do Mês) -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100 card-ciclo-fechamento border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <span class="badge badge-ciclo-fechamento mb-1">
+                            <i class="bi bi-1-circle-fill me-1"></i> 1º CICLO • RECEBIMENTO {{ perfil_usuario.label_curto_fechamento|upper }}
+                        </span>
+                        <h6 class="fw-bold mb-0 text-primary-emphasis">
+                            Contas de 01 a {{ perfil_usuario.dia_adiantamento|add:"-1" }} • Salário em {{ matriz.data_fechamento_5du|date:"d/m/Y" }}
+                        </h6>
+                    </div>
+                    <i class="bi bi-bank2 fs-3 text-primary opacity-75"></i>
+                </div>
+                <div class="row text-center my-2 pt-2 border-top border-primary-subtle">
+                    <div class="col-4">
+                        <div class="text-muted small">Entradas</div>
+                        <div class="fw-bold text-success">+ {{ matriz.resumo_q2.receitas|moeda }}</div>
+                    </div>
+                    <div class="col-4 border-start border-end">
+                        <div class="text-muted small">Contas Ciclo</div>
+                        <div class="fw-bold text-danger">- {{ matriz.resumo_q2.despesas|moeda }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Sobra Ciclo</div>
+                        <div class="fw-bold {% if matriz.resumo_q2.liquido >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                            {{ matriz.resumo_q2.liquido|moeda }}
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Comprometimento do 1º Ciclo</span>
+                        <span class="fw-semibold">{{ matriz.resumo_q2.pct_comprometido }}%</span>
+                    </div>
+                    <div class="progress" style="height: 7px;">
+                        <div class="progress-bar bg-primary" style="width: {{ matriz.resumo_q2.pct_comprometido }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: 2º Ciclo / Adiantamento (Meio do Mês) -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100 card-ciclo-adiantamento border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <span class="badge badge-ciclo-adiantamento mb-1">
+                            <i class="bi bi-2-circle-fill me-1"></i> 2º CICLO • RECEBIMENTO {{ perfil_usuario.label_curto_adiantamento|upper }}
+                        </span>
+                        <h6 class="fw-bold mb-0 text-warning-emphasis">
+                            Contas de {{ perfil_usuario.dia_adiantamento }} a 31 • Salário em {{ matriz.data_adiantamento_15|date:"d/m/Y" }}
+                        </h6>
+                    </div>
+                    <i class="bi bi-wallet2 fs-3 text-warning-emphasis opacity-75"></i>
+                </div>
+                <div class="row text-center my-2 pt-2 border-top border-warning-subtle">
+                    <div class="col-4">
+                        <div class="text-muted small">Entradas (Vale)</div>
+                        <div class="fw-bold text-success">+ {{ matriz.resumo_q1.receitas|moeda }}</div>
+                    </div>
+                    <div class="col-4 border-start border-end">
+                        <div class="text-muted small">Contas Ciclo</div>
+                        <div class="fw-bold text-danger">- {{ matriz.resumo_q1.despesas|moeda }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Sobra Ciclo</div>
+                        <div class="fw-bold {% if matriz.resumo_q1.liquido >= 0 %}text-warning-emphasis{% else %}text-danger{% endif %}">
+                            {{ matriz.resumo_q1.liquido|moeda }}
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Comprometimento do 2º Ciclo</span>
+                        <span class="fw-semibold">{{ matriz.resumo_q1.pct_comprometido }}%</span>
+                    </div>
+                    <div class="progress" style="height: 7px;">
+                        <div class="progress-bar bg-warning" style="width: {{ matriz.resumo_q1.pct_comprometido }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Resultado Consolidado do Mês & Saldo Projetado -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100 border-0 bg-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <span class="badge bg-dark mb-1">
+                            <i class="bi bi-graph-up-arrow me-1"></i> CONSOLIDADO MENSAL
+                        </span>
+                        <h6 class="fw-bold mb-0">Saldo Anterior: {{ matriz.saldo_anterior|moeda }}</h6>
+                    </div>
+                    <i class="bi bi-cash-coin fs-3 text-success"></i>
+                </div>
+                <div class="row text-center my-2 pt-2 border-top">
+                    <div class="col-4">
+                        <div class="text-muted small">Receitas Mês</div>
+                        <div class="fw-bold text-success">+ {{ matriz.resumo_mensal.receitas|moeda }}</div>
+                    </div>
+                    <div class="col-4 border-start border-end">
+                        <div class="text-muted small">Despesas Mês</div>
+                        <div class="fw-bold text-danger">- {{ matriz.resumo_mensal.despesas|moeda }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Saldo Final</div>
+                        <div class="fw-bold {% if matriz.saldo_final_projetado >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ matriz.saldo_final_projetado|moeda }}
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Comprometimento Total da Renda</span>
+                        <span class="fw-semibold">{{ matriz.resumo_mensal.pct_comprometido }}%</span>
+                    </div>
+                    <div class="progress" style="height: 7px;">
+                        <div class="progress-bar bg-success" style="width: {{ matriz.resumo_mensal.pct_comprometido }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 p-3">
+            <div class="text-muted small">Saldo Anterior</div>
+            <h5 class="fw-bold mb-0">{{ matriz.saldo_anterior|moeda }}</h5>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 p-3">
+            <div class="text-muted small">Total Receitas do Mês</div>
+            <h5 class="fw-bold text-success mb-0">+ {{ matriz.resumo_mensal.receitas|moeda }}</h5>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 p-3">
+            <div class="text-muted small">Total Despesas do Mês</div>
+            <h5 class="fw-bold text-danger mb-0">- {{ matriz.resumo_mensal.despesas|moeda }}</h5>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 p-3">
+            <div class="text-muted small">Saldo Projetado Final</div>
+            <h5 class="fw-bold {% if matriz.saldo_final_projetado >= 0 %}text-primary{% else %}text-danger{% endif %} mb-0">
+                {{ matriz.saldo_final_projetado|moeda }}
+            </h5>
+        </div>
+    </div>
+</div>
+{% endif %}

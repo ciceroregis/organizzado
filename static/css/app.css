@@ -1,0 +1,232 @@
+:root {
+    --q2-fechamento-primary: #1e40af;
+    --q2-fechamento-bg: #eff6ff;
+    --q2-fechamento-border: #3b82f6;
+    --q1-adiantamento-primary: #b45309;
+    --q1-adiantamento-bg: #fffbeb;
+    --q1-adiantamento-border: #f59e0b;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #1e293b;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-bottom: 52px;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.footer-fixed {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+}
+
+/* Identidade Visual: 1º Ciclo / Fechamento (Início do Mês) */
+.card-ciclo-fechamento {
+    border-left: 5px solid var(--q2-fechamento-border) !important;
+    background: linear-gradient(135deg, #ffffff 0%, var(--q2-fechamento-bg) 100%);
+}
+
+.badge.badge-ciclo-fechamento,
+.badge-ciclo-fechamento {
+    background-color: #dbeafe !important;
+    color: #1e3a8a !important;
+    border: 1px solid #93c5fd !important;
+    font-weight: 700 !important;
+    padding: 0.42rem 0.65rem !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.2px;
+}
+
+.row-ciclo-fechamento {
+    border-left: 4px solid var(--q2-fechamento-border);
+}
+
+.col-fechamento-cell {
+    background-color: rgba(59, 130, 246, 0.05) !important;
+    border-left: 1px dashed #bfdbfe;
+    border-right: 1px dashed #bfdbfe;
+}
+
+.th-fechamento {
+    background-color: #dbeafe !important;
+    color: #1e3a8a !important;
+    border-bottom: 2px solid #3b82f6 !important;
+}
+
+/* Identidade Visual: 2º Ciclo / Adiantamento (Meio do Mês) */
+.card-ciclo-adiantamento {
+    border-left: 5px solid var(--q1-adiantamento-border) !important;
+    background: linear-gradient(135deg, #ffffff 0%, var(--q1-adiantamento-bg) 100%);
+}
+
+.badge.badge-ciclo-adiantamento,
+.badge-ciclo-adiantamento {
+    background-color: #fef3c7 !important;
+    color: #78350f !important;
+    border: 1px solid #f59e0b !important;
+    font-weight: 700 !important;
+    padding: 0.42rem 0.65rem !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.2px;
+}
+
+.row-ciclo-adiantamento {
+    border-left: 4px solid var(--q1-adiantamento-border);
+}
+
+.col-adiantamento-cell {
+    background-color: rgba(245, 158, 11, 0.06) !important;
+    border-left: 1px dashed #fde68a;
+    border-right: 1px dashed #fde68a;
+}
+
+.th-adiantamento {
+    background-color: #fef3c7 !important;
+    color: #78350f !important;
+    border-bottom: 2px solid #f59e0b !important;
+}
+
+/* Marcos Divisores de Virada de Quinzena */
+.quinzena-divider-row td {
+    background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 50%, #fffbeb 100%) !important;
+    color: #78350f !important;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-top: 2px solid #f59e0b !important;
+    border-bottom: 2px solid #f59e0b !important;
+    letter-spacing: 0.3px;
+}
+
+.fechamento-divider-row td {
+    background: linear-gradient(90deg, #eff6ff 0%, #dbeafe 50%, #eff6ff 100%) !important;
+    color: #1e3a8a !important;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-top: 2px solid #3b82f6 !important;
+    border-bottom: 2px solid #3b82f6 !important;
+    letter-spacing: 0.3px;
+}
+
+.nav-tabs-custom .nav-link {
+    color: #475569;
+    font-weight: 600;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 0.75rem 1.15rem;
+}
+
+.nav-tabs-custom .nav-link.active {
+    color: #0f172a;
+    background: transparent;
+    border-bottom: 3px solid #2563eb;
+}
+
+.table-fluxo th {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    vertical-align: middle;
+}
+
+.table-fluxo td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+/* Botões da Coluna de Status de Pagamento */
+.btn-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    min-width: 108px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 999px;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.btn-status-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.btn-status-pago {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+}
+
+.btn-status-pago:hover {
+    background-color: #bbf7d0;
+    color: #14532d;
+}
+
+.btn-status-pendente {
+    background-color: #fef9c3;
+    color: #a16207;
+    border: 1px solid #fde047;
+}
+
+.btn-status-pendente:hover {
+    background-color: #fef08a;
+    color: #713f12;
+}
+
+.btn-status-agendado {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+}
+
+.btn-status-agendado:hover {
+    background-color: #bae6fd;
+    color: #0c4a6e;
+}
+
+.btn-status-atrasado {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+}
+
+.btn-status-atrasado:hover {
+    background-color: #fecaca;
+    color: #7f1d1d;
+}
+
+/* Botões da Coluna de Ações (Editar, Trocar Ciclo, Excluir) */
+.action-btn-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.btn-action-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 30px;
+    min-width: 32px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}

@@ -1,0 +1,21 @@
+{% if forma == 'PIX' %}
+    <span class="badge text-success-emphasis bg-success-subtle border border-success-subtle">
+        <i class="bi bi-lightning-charge-fill me-1"></i> Pix
+    </span>
+{% elif forma == 'DEBITO' %}
+    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+        <i class="bi bi-credit-card-2-front me-1"></i> Débito
+    </span>
+{% elif forma == 'CREDITO' %}
+    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+        <i class="bi bi-credit-card-fill me-1"></i> Crédito
+    </span>
+{% elif forma == 'BOLETO' %}
+    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+        <i class="bi bi-upc-scan me-1"></i> Boleto/Título
+    </span>
+{% else %}
+    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+        <i class="bi bi-bank me-1"></i> {{ label|default:forma }}
+    </span>
+{% endif %}

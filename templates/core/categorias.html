@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Categorias • Organizzado{% endblock %}
 
@@ -60,14 +61,17 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <form method="post" onsubmit="return confirm('Excluir categoria {{ sub.descricao }}?');">
-                                {% csrf_token %}
-                                <input type="hidden" name="acao" value="excluir">
-                                <input type="hidden" name="categoria_id" value="{{ sub.pk }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger py-0 px-2 btn-excluir-modal"
+                                    title="Excluir subcategoria"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalConfirmarExclusao"
+                                    data-action-url="{% url 'categorias' %}"
+                                    data-acao="excluir"
+                                    data-categoria-id="{{ sub.pk }}"
+                                    data-descricao="Subcategoria: {{ sub.descricao }}">
+                                <i class="bi bi-trash3"></i>
+                            </button>
                         </li>
                         {% endfor %}
                     </ul>
@@ -77,4 +81,10 @@
         </div>
     </div>
 </div>
+
+{% include 'core/components/modal_confirmar_exclusao.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/fluxo-quinzenal.js' %}"></script>
 {% endblock %}

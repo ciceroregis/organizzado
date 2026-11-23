@@ -1,0 +1,68 @@
+<!-- MODAL: NOVO LANÇAMENTO -->
+<div class="modal fade" id="modalNovoLancamento" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="novo_lancamento">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-plus-circle me-1 text-info"></i> Novo Lançamento no Fluxo de Caixa
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="id_data">Data</label>
+                            {{ form_lancamento.data }}
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold" for="id_descricao">Descrição</label>
+                            {{ form_lancamento.descricao }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="id_categoria">Categoria</label>
+                            {{ form_lancamento.categoria }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="id_valor">Valor (R$)</label>
+                            {{ form_lancamento.valor }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="id_forma_pagamento">Forma de Pagamento</label>
+                            {{ form_lancamento.forma_pagamento }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="id_ciclo">Ciclo Salarial Alocado</label>
+                            {{ form_lancamento.ciclo }}
+                            <div class="form-text">Escolha qual parcela do salário pagará esta conta.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="id_status">Status de Pagamento</label>
+                            {{ form_lancamento.status }}
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold" for="id_observacao">Observação</label>
+                            {{ form_lancamento.observacao }}
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                {{ form_lancamento.fixo_recorrente }}
+                                <label class="form-check-label fw-semibold" for="id_fixo_recorrente">
+                                    Lançamento Fixo Mensal
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-check-lg me-1"></i> Salvar Lançamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

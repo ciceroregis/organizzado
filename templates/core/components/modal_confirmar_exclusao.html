@@ -1,0 +1,34 @@
+<!-- MODAL: CONFIRMAÇÃO DE EXCLUSÃO -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" id="formConfirmarExclusaoModal" action="">
+                {% csrf_token %}
+                <input type="hidden" name="acao" id="exclusao_hidden_acao" value="">
+                <input type="hidden" name="categoria_id" id="exclusao_hidden_categoria_id" value="">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Exclusão
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-2">Tem certeza que deseja excluir permanentemente o registro abaixo?</p>
+                    <div class="p-3 bg-light rounded border border-danger-subtle">
+                        <div class="fw-bold text-dark fs-6" id="exclusao_item_descricao">—</div>
+                        <div class="text-muted small mt-1" id="exclusao_item_detalhes"></div>
+                    </div>
+                    <p class="text-danger small mb-0 mt-3">
+                        <i class="bi bi-info-circle me-1"></i>Esta ação não poderá ser desfeita e atualizará imediatamente o saldo acumulado.
+                    </p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger fw-semibold">
+                        <i class="bi bi-trash3-fill me-1"></i> Sim, Excluir
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,24 @@
+<form method="post" action="{% url 'alternar_status_lancamento' lancamento.pk %}" class="d-inline">
+    {% csrf_token %}
+    {% if lancamento.status == 'PAGO' %}
+        <button type="submit" class="btn-status-pill btn-status-pago" title="Clique para alternar o status (Pago → Pendente → Agendado)">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Pago</span>
+        </button>
+    {% elif lancamento.status == 'PENDENTE' %}
+        <button type="submit" class="btn-status-pill btn-status-pendente" title="Clique para alternar o status (Pendente → Agendado → Pago)">
+            <i class="bi bi-clock-history"></i>
+            <span>Pendente</span>
+        </button>
+    {% elif lancamento.status == 'AGENDADO' %}
+        <button type="submit" class="btn-status-pill btn-status-agendado" title="Clique para alternar o status (Agendado → Pago → Pendente)">
+            <i class="bi bi-calendar-event"></i>
+            <span>Agendado</span>
+        </button>
+    {% else %}
+        <button type="submit" class="btn-status-pill btn-status-atrasado" title="Clique para alternar o status">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Atrasado</span>
+        </button>
+    {% endif %}
+</form>

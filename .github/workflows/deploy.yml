@@ -87,7 +87,16 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "::error::O secret VPS_SSH_KEY está VAZIO! Verifique em Settings -> Secrets and variables -> Actions -> Repository secrets."
+            exit 1
+          fi
+          if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ]; then
+            echo "::error::Os secrets VPS_HOST ou VPS_USER estão vazios! Verifique em Settings -> Secrets and variables -> Actions -> Repository secrets."
+            exit 1
+          fi
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           if echo "$SSH_PRIVATE_KEY" | grep -q "BEGIN OPENSSH PRIVATE KEY"; then
@@ -96,7 +105,10 @@ jobs:
             echo "$SSH_PRIVATE_KEY" | tr -d '\r\n ' | base64 -d > ~/.ssh/id_ed25519
           fi
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null || {
+            echo "::error::O conteúdo do secret VPS_SSH_KEY não é uma chave SSH privada válida!"
+            exit 1
+          }
           ssh-keyscan -p "${VPS_PORT:-22022}" -H "$VPS_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 

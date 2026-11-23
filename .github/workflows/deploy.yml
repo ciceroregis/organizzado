@@ -1,0 +1,143 @@
+name: CI/CD - Deploy Organizzado (VPS HostGator)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  # ============================================================================
+  # JOB 1: Qualidade, Segurança e Testes Automatizados (CI)
+  # ============================================================================
+  test:
+    name: Testes & Verificação Django
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: organizzado_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_password_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d organizzado_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DJANGO_SECRET_KEY: ci-temporary-secret-key-for-testing-only
+      DJANGO_DEBUG: "False"
+      POSTGRES_DB: organizzado_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test_password_ci
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validar configuração do Django e Migrations
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Validar coleta de estáticos (WhiteNoise)
+        run: |
+          python manage.py collectstatic --noinput
+
+      - name: Executar testes automatizados
+        run: |
+          python manage.py test --verbosity=2
+
+  # ============================================================================
+  # JOB 2: Deploy Automatizado na VPS via SSH + Docker Compose (CD)
+  # ============================================================================
+  deploy:
+    name: Deploy em Produção (VPS)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Configurar SSH e Known Hosts com segurança
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${VPS_PORT:-22022}" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Executar Deploy via SSH na VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -p "${VPS_PORT:-22022}" "${VPS_USER}@${VPS_HOST}" 'bash -se' << 'EOF'
+            set -euo pipefail
+
+            APP_DIR="/opt/organizzado"
+            echo "==> [1/5] Acessando diretório da aplicação ($APP_DIR)..."
+            cd "$APP_DIR"
+
+            echo "==> [2/5] Atualizando código-fonte da branch main..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "==> [3/5] Construindo e atualizando containers Docker..."
+            docker compose up -d --build --remove-orphans
+
+            echo "==> [4/5] Aguardando Healthcheck da aplicação web..."
+            for i in $(seq 1 20); do
+              STATUS="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' organizzado_web 2>/dev/null || echo 'starting')"
+              echo "    Tentativa $i/20 - Status do container organizzado_web: $STATUS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "==> Aplicação saudável (healthy)!"
+                break
+              fi
+              if [ "$i" -eq 20 ]; then
+                echo "==> ERRO: Container não ficou saudável a tempo. Últimos logs:"
+                docker compose logs --tail=50 web
+                exit 1
+              fi
+              sleep 3
+            done
+
+            echo "==> [5/5] Limpando imagens antigas não utilizadas..."
+            docker image prune -f
+
+            echo "==> Status final dos containers:"
+            docker compose ps
+          EOF
+
+      - name: Limpar chave SSH temporária do Runner
+        if: always()
+        run: rm -rf ~/.ssh/id_ed25519 ~/.ssh/known_hosts

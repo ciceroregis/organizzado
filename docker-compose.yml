@@ -1,0 +1,129 @@
+services:
+  traefik:
+    image: traefik:v3.2
+    container_name: organizzado_traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-ciceroregis25@gmail.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--accesslog=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - proxy_net
+
+  db:
+    image: postgres:16-alpine
+    container_name: organizzado_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-organizzado}
+      POSTGRES_USER: ${POSTGRES_USER:-organizzado_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-organizzado_user} -d ${POSTGRES_DB:-organizzado}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal_net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: organizzado_web:latest
+    container_name: organizzado_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    labels:
+      - "traefik.enable=true"
+      # Roteador HTTPS (www.organizzado.com.br e organizzado.com.br)
+      - "traefik.http.routers.organizzado.rule=Host(`${DOMAIN_NAME:-organizzado.com.br}`) || Host(`www.${DOMAIN_NAME:-organizzado.com.br}`)"
+      - "traefik.http.routers.organizzado.entrypoints=websecure"
+      - "traefik.http.routers.organizzado.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.organizzado.middlewares=sec-headers@docker"
+      - "traefik.http.services.organizzado.loadbalancer.server.port=8000"
+      # Headers de Segurança
+      - "traefik.http.middlewares.sec-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.sec-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.sec-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.sec-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.sec-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.sec-headers.headers.browserXssFilter=true"
+    networks:
+      - proxy_net
+      - internal_net
+
+  portainer:
+    image: portainer/portainer-ce:lts
+    container_name: organizzado_portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN_NAME:-organizzado.com.br}`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+    networks:
+      - proxy_net
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: organizzado_dozzle
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DOZZLE_NO_ANALYTICS: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dozzle.rule=Host(`dozzle.${DOMAIN_NAME:-organizzado.com.br}`) || Host(`logs.${DOMAIN_NAME:-organizzado.com.br}`)"
+      - "traefik.http.routers.dozzle.entrypoints=websecure"
+      - "traefik.http.routers.dozzle.tls.certresolver=letsencrypt"
+      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+    networks:
+      - proxy_net
+
+volumes:
+  traefik_letsencrypt:
+  postgres_data:
+  portainer_data:
+
+networks:
+  proxy_net:
+    name: organizzado_proxy_net
+  internal_net:
+    name: organizzado_internal_net
+    internal: true

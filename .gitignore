@@ -4,4 +4,11 @@ __pycache__/
 *$py.class
 *.sqlite3
 .env
+.env.*
+!.env.example
 .DS_Store
+.idea/
+staticfiles/
+letsencrypt/
+pgdata/
+portainer_data/

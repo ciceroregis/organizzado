@@ -1,8 +1,15 @@
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path
 from core import views
 
+
+def healthz_view(request):
+    return JsonResponse({'status': 'ok'})
+
+
 urlpatterns = [
+    path('healthz/', healthz_view, name='healthz'),
     path('django-admin/', admin.site.urls),
     path('', views.dashboard_view, name='dashboard'),
     path('login/', views.login_view, name='login'),

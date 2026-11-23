@@ -1,0 +1,16 @@
+# Framework Principal & Dependências Core
+Django==6.1.3
+asgiref==3.13.0
+sqlparse==0.6.1
+
+# Banco de Dados (PostgreSQL)
+psycopg[binary]==3.3.9
+psycopg2-binary==2.9.13
+
+# Importação de Extratos Bancários (PDF)
+pypdf==7.1.1
+
+# Produção & Variáveis de Ambiente
+gunicorn==27.0.1
+whitenoise==6.12.0
+python-dotenv==1.2.4
